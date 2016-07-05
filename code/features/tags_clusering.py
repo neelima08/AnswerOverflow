@@ -29,14 +29,12 @@ def xml2List(row):
     INPUT: Elements in XML format
     OUTPUT: Elements in list format
     """
-
     return row.strip("><").split("><")
 
 def get_questions(posts):
     """
     - Returns questions from posts data frame
     """
-
     sq.registerDataFrameAsTable(df, "posts_table")
     return sq.sql('''SELECT * FROM tags_table WHERE PostTypeId = 1''')
 
@@ -46,7 +44,6 @@ def get_tags(questions):
     - INPUT: Questions
     - OUTPUT: List of list of Tags
     """
-
     df_tags = questions.select('Tags').map(lambda row: xml2List(row[0]))
     return df_tags.collect()
 
@@ -56,14 +53,12 @@ def init_w2v_model(tags_list):
     - INPUT: List of lists of Tags
     - OUTPUT: returns nXm numpy array, where n = number of words; m = number of dimensions of feature space
     """
-
     return word2vec.Word2Vec(tags_of_questions, workers = 8, size = 300, min_count = 50, window = 20, sample = 0.0001)
 
 def save_w2v_model(word2vec_model, filename):
     """
     - Saves word2vec model
     """
-
     word2vec_model.save('/tmp/word2vec_model.bin')
 
 def create_tag_clusters(word2vec_model):
@@ -72,7 +67,6 @@ def create_tag_clusters(word2vec_model):
     - INPUT: Word2Vec model
     - OUTPUT: Dictionary of tag to cluster number
     """
-
     word_vectors = word2vec_model.syn0
     num_clusters = int((word_vectors.shape[0]/2)**0.5)
     kmeans_clustering = KMeans(n_clusters = num_clusters)
@@ -87,7 +81,6 @@ def cluster_to_tags_mapping(tag_to_cluster_map):
     - INPUT: dictionary of tag to cluster number
     - OUTPUT: dictionary of cluster number to list of tags in that cluster
     """
-
     num_clusters = len(tag_to_cluster_map.keys())
     clusters_to_tags = []
 
@@ -117,4 +110,4 @@ if __name__ == '__main__':
 
     tag_to_cluster_map = create_tag_clusters(word_vectors)
     cluster_to_tag_map = cluster_to_tags_mapping(tag_to_cluster_map)
-    save_cluster_to_tags_mapping(cluster_to_tag_map)
+    save_cluster_to_tags_mapping(cluster_to_tag_map, 'clusters.pickle')
