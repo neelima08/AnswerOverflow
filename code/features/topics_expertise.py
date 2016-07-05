@@ -68,7 +68,7 @@ def save_topics_expertise(topics_expertise, filename):
         pickle.dump(topics_expertise, handle)
 
 if __name__ == '__main__':
-    topics_to_tags = get_topic_to_tags_mapping('topics.pickle')
+    topics_to_tags = get_topic_to_tags_mapping('clusters.pickle')
     user_tag_expertise = get_user_tag_expertise('user_tag_expertise.pickle')
 
     tags_to_topics = get_tag_to_topic_mapping(topics_to_tags)
