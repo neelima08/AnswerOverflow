@@ -1,167 +1,193 @@
-# coding: utf-8
-
-# In[2]:
-
 import pandas as pd
 import numpy as np
 import pickle
 from datetime import datetime
+import operator
+
+def load_from_pickle(filename):
+    with open(filename, 'r') as handle:
+        return pickle.load(handle)
+
+def get_questions_answerers_mapping():
+    """
+    - Reads a csv file which contains mapping from question to list of anwerers and returns it as a dict
+    """
+    questions_answerers = pd.read_csv('Question_Answerer.csv', delimiter='|')
+    questions_answerers['OwnerUserIdList'] = questions_answerers['OwnerUserId'].astype(list)
+    questions_answerers_list = questions_answerers.drop(['OwnerUserId'], axis=1)
+
+    return questions_answerers_list.set_index('ParentId').to_dict()
 
 
-# In[3]:
-
-questions_answerers = pd.read_csv('/tmp/Question_Answerer.csv', delimiter='|')
-questions_answerers['OwnerUserIdList'] = questions_answerers['OwnerUserId'].astype(list)
-questions_answerers_list = questions_answerers.drop(['OwnerUserId'], axis=1)
-questions_answerers_dict = questions_answerers_list.set_index('ParentId').to_dict()
-
-
-# In[4]:
-
-def func_format(row):
+def xml2List(row):
+    """
+    - Converts XML elements to list. Example: <foo><bar> will become [foo, bar]
+    INPUT: Elements in XML format
+    OUTPUT: Elements in list format
+    """
     return row.strip("><").split("><")
 
 
-# In[5]:
+def get_questions_hour_tag_mapping():
+    """
+    - Gets questions from posts file. Each row of question contains hour of question creation and list of tags associated with the question
+    """
+    posts = pd.read_csv('posts.csv', delimiter='|', usecols= ['Id', 'CreationDate', 'PostTypeId', 'Tags'])
 
-posts = pd.read_csv('/tmp/posts.csv', delimiter='|', usecols= ['Id', 'CreationDate', 'PostTypeId', 'Tags'])
+    questions = posts.loc[posts['PostTypeId'] == 1]
+    questions['CreationDate'] = questions['CreationDate'].apply(lambda x: datetime.strptime(x, "%Y-%m-%dT%H:%M:%S.%f"))
 
-questions = posts.loc[posts['PostTypeId'] == 1]
-questions['CreationDate'] = questions['CreationDate'].apply(lambda x: datetime.strptime(x, "%Y-%m-%dT%H:%M:%S.%f"))
+    questions_2016 = questions[(questions.CreationDate.dt.year >= 2016)]
+    questions_2016['Hour'] = questions_2016['CreationDate'].dt.hour
+    questions_2016['Tags'] = questions_2016['Tags'].apply(xml2List)
 
-questions_2016 = questions[(questions.CreationDate.dt.year >= 2016)]
-questions_2016['Hour'] = questions_2016['CreationDate'].dt.hour
-questions_2016['Tags'] = questions_2016['Tags'].apply(func_format)
-
-
-# In[6]:
-
-with open('/tmp/hour_to_users.pickle', 'r') as handle:
-    hour_to_users = pickle.load(handle)
+    return questions_2016
 
 
-# In[8]:
+def get_topic_user_expertise_mapping(topics_expertise):
+    """
+    - Returns a dictionary which maps topic to UserID and topic expertise score.
+    """
+    topics_expertise_dict = {}
+    for topic in topics_expertise.keys():
+        users_score_list = topics_expertise[topic]
 
-with open('/tmp/clusters_expertise.pickle', 'r') as handle:
-    clusters_expertise = pickle.load(handle)
+        users_score_dict = {}
+        for user_score_tuple in users_score_list:
+            users_score_dict[user_score_tuple[0]] = user_score_tuple[1]
 
+        topics_expertise_dict[topic] = users_score_dict
 
-# In[9]:
-
-with open('/tmp/tags_clusters.pickle', 'r') as handle:
-    tags_clusters = pickle.load(handle)
-
-
-# In[10]:
-
-clusters_expertise_dict = {}
-for cluster in clusters_expertise.keys():
-    users_score = clusters_expertise[cluster]
-
-    users_score_dict = {}
-    for user_score in users_score:
-        users_score_dict[user_score[0]] = user_score[1]
-
-    clusters_expertise_dict[cluster] = users_score_dict
+    return topics_expertise_dict
 
 
-# In[11]:
+def get_hour_user_avaiability_mapping(user_availability):
+    """
+    - Returns a dictionary which maps hour to userID and availability score.
+    """
+    hour_to_users_availability = {}
+    for hour in user_availability.keys():
+        user_availability_list = user_availability[hour]
 
-hour_score_dict = {}
-for hour in hour_to_users.keys():
-    hour_users_score = hour_to_users[hour]
+        user_availability_score_dict = {}
+        for user_score_tuple in user_availability_list:
+            user_availability_score_dict[user_score_tuple[0]] = user_score_tuple[1]
+        
+        hour_to_users_availability[hour] = user_availability_score_dict
 
-    hour_users_score_dict = {}
-    for hour_user_score in hour_users_score:
-        hour_users_score_dict[hour_user_score[0]] = hour_user_score[1]
-    
-    hour_score_dict[hour] = hour_users_score_dict
-
-
-# In[12]:
-
-hour_cluster_expertise_dict = {}
-for hour in hour_score_dict.keys():
-    hour_users_score = hour_score_dict[hour]
-    hour_users = set(hour_users_score.keys())
-
-    clusters_expertise_dict_per_hour = {}
-    for cluster in clusters_expertise_dict.keys():
-        cluster_users_score = clusters_expertise_dict[cluster]
-        cluster_users = set(cluster_users_score.keys())
-
-        users_topical_hour_expertise_list = []
-
-        hour_cluster_users = cluster_users.union(hour_users)
-        for user in hour_cluster_users:
-            users_topical_hour_expertise = hour_users_score.get(user, 0) + cluster_users_score.get(user, 0)
-            users_topical_hour_expertise_list.append((user, users_topical_hour_expertise))
-
-        clusters_expertise_dict_per_hour[cluster] = users_topical_hour_expertise_list
-
-    hour_cluster_expertise_dict[hour] = clusters_expertise_dict_per_hour
+    return hour_to_users_availability
 
 
-# In[14]:
+def get_hour_user_expertise_mapping(hour_to_users_availability, topics_expertise_dict):
+    """
+    - Returns a dictionary which maps hour to topic, userID and score. Score is equal to (topic expertise + avaiability)
+    """
+    hour_user_expertise_dict = {}
 
-import operator
+    for hour in hour_to_users_availability.keys():
+        user_availability_score_dict = hour_to_users_availability[hour]
+        hour_users = set(user_availability_score_dict.keys())
 
-for hour in hour_cluster_expertise_dict.keys():
-    hour_cluster_expertise = hour_cluster_expertise_dict[hour]
+        topic_expertise_dict_per_hour = {}
+        for topic in topics_expertise_dict.keys():
+            topic_users_score = topics_expertise_dict[topic]
+            topic_users = set(topic_users_score.keys())
 
-    for cluster in hour_cluster_expertise.keys():
-        hour_cluster_expertise[cluster].sort(key=operator.itemgetter(1), reverse=True)
+            users_topic_hour_expertise_list = []
 
+            hour_topic_users = topic_users.union(hour_users)
+            for user in hour_topic_users:
+                users_topic_hour_expertise = user_availability_score_dict.get(user, 0) + topic_users_score.get(user, 0)
+                users_topic_hour_expertise_list.append((user, users_topical_hour_expertise))
 
-# In[30]:
-sampling = 0.6
+            topic_expertise_dict_per_hour[topic] = users_topic_hour_expertise_list
 
-hour_cluster_to_potential_answerers = {}
-for hour in hour_cluster_expertise_dict.keys():
-    hour_cluster_expertise = hour_cluster_expertise_dict[hour]
+        hour_user_expertise_dict[hour] = topic_expertise_dict_per_hour
 
-    cluster_potential_answerers = {}
-    for cluster in hour_cluster_expertise.keys():
-        users = hour_cluster_expertise[cluster]
-        number_users = int(sampling*len(users))
+    for hour in hour_user_expertise_dict.keys():
+        hour_user_expertise = hour_user_expertise_dict[hour]
 
-        potential_answerers = set()
-        for user_score in users[:number_users]:
-            potential_answerers.add(user_score[0])
+        for topic in hour_user_expertise.keys():
+            hour_user_expertise[topic].sort(key=operator.itemgetter(1), reverse=True)
 
-        cluster_potential_answerers[cluster] = potential_answerers
-
-    hour_cluster_to_potential_answerers[hour] = cluster_potential_answerers
+    return hour_user_expertise_dict
 
 
-# In[31]:
+def get_potential_answerers(hour_user_expertise_dict):
+    """
+    - Returns set of potential answerers for each topic and hour.
+    """
+    sampling = 0.5
 
-total = 0
-success = 0
+    hour_topic_to_potential_answerers = {}
+    for hour in hour_user_expertise_dict.keys():
+        hour_user_expertise = hour_user_expertise_dict[hour]
 
-for index, row in questions_2016.iterrows():
-    question = row['Id']
-    if question not in questions_answerers_dict['OwnerUserIdList']:
-        continue
+        topic_potential_answerers = {}
+        for topic in hour_user_expertise.keys():
+            users = hour_user_expertise[topic]
+            number_users = int(sampling*len(users))
 
-    total += 1
-    answerers = set(map(int, questions_answerers_dict['OwnerUserIdList'][question].strip('[]').split(', ')))
+            potential_answerers = set()
+            for user_score in users[:number_users]:
+                potential_answerers.add(user_score[0])
 
-    tags = row['Tags']
-    hour = row['Hour']
+            topic_potential_answerers[topic] = potential_answerers
 
-    cluster_to_potential_answerers = hour_cluster_to_potential_answerers[hour]
+        hour_topic_to_potential_answerers[hour] = topic_potential_answerers
 
-    found = False
-    for tag in tags:
-        if tag not in tags_clusters:
-          continue
+    return hour_topic_to_potential_answerers
 
-        potential_answerers = cluster_to_potential_answerers[cluster]
-        if len((potential_answerers).intersection(answerers)) > 0:
-            found = True
-            break
-    if found:
-        success += 1
 
-print (success, total)
+def get_recommender_accuracy(questions_2016, questions_answerers_dict, tags_topics_mapping, hour_topic_to_potential_answerers):
+    """
+    - This function calculates and returns accuracy of prediction of an answerer for a question. This accuracy is calculated
+      by matching whether answerer of a question appears in potential answerers set.
+    """
+    total = 0
+    success = 0
+
+    for index, row in questions_2016.iterrows():
+        question = row['Id']
+        if question not in questions_answerers_dict['OwnerUserIdList']:
+            continue
+
+        total += 1
+        answerers = set(map(int, questions_answerers_dict['OwnerUserIdList'][question].strip('[]').split(', ')))
+
+        tags = row['Tags']
+        hour = row['Hour']
+
+        topic_to_potential_answerers = hour_topic_to_potential_answerers[hour]
+
+        found = False
+        for tag in tags:
+            if tag not in tags_topics_mapping:
+              continue
+
+            topic = tags_topics_mapping[tag]
+            potential_answerers = topic_to_potential_answerers[topic]
+            if len((potential_answerers).intersection(answerers)) > 0:
+                found = True
+                break
+        if found:
+            success += 1
+
+    return (success * 100) / float(total)
+
+if __name__ == '__main__':
+    questions_answerers_dict = get_questions_answerers_mapping()
+    questions_2016 = get_questions_hour_tag_mapping()
+
+    user_availability = load_from_pickle('hour_to_users.pickle')
+    topics_expertise = load_from_pickle('topics_expertise.pickle')
+    tags_topics_mapping = load_from_pickle('tags_topics.pickle')
+
+    topics_expertise_dict = get_topic_user_expertise_mapping(topics_expertise)
+    hour_to_users_availability = get_hour_user_avaiability_mapping(user_availability)
+    hour_user_expertise_dict = get_hour_user_expertise_mapping(hour_to_users_availability, topics_expertise_dict)
+
+    potential_answerers = get_potential_answerers(hour_user_expertise_dict)
+    recommender_accuracy = get_recommender_accuracy(questions_2016, questions_answerers_dict, tags_topics_mapping, potential_answerers)
+
+    print("Accuracy of topic expertise and user availability recommender is %s" % recommender_accuracy)
