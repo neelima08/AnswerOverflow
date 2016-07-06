@@ -64,12 +64,12 @@ def get_user_expertise(user_tag_score):
 
         for tag in tags:
             tag_expertise = user_tag_expertise.get(user, {})
-            tag_expertise[tag] = tag_expertise.get(tag, 0) + sigmoid(score, 0.2, 20)
+            tag_expertise[tag] = tag_expertise.get(tag, 0) + sigmoid(score)
             user_tag_expertise[user] = tag_expertise
     
     return user_tag_expertise
 
-def save_user_expertise(filename):
+def save_as_pickle(object_to_save, filename):
     with open(filename, 'wb') as handle:
         pickle.dump(user_tag_expertise, handle)
 
@@ -80,4 +80,4 @@ if __name__ == '__main__':
     save_get_user_tags_score_mapping(user_tag_score, 'user_tag_score.csv')
 
     user_tag_expertise = get_user_expertise(user_tag_score)
-    save_user_expertise(user_tag_expertise, 'user_tag_expertise.pickle')
+    save_as_pickle(user_tag_expertise, 'user_tag_expertise.pickle')
