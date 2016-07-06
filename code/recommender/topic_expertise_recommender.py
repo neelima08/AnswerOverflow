@@ -96,7 +96,9 @@ if __name__ == '__main__':
     questions_answerers_dict = get_questions_answerers_mapping()
     questions_tags_dict = get_question_tags_mapping()
 
+    # Load user's topic expertise, i.e. topic to list of tuple where each tuple conists of UserID and score. This list is sorted wrt score.
     topics_expertise = load_from_pickle('topics_expertise.pickle')
+    # Load mapping from tag to topicID
     tags_topics_mapping = load_from_pickle('tags_topic.pickle')
 
     topic_to_potential_answerers = get_potential_answerers(topics_expertise)
