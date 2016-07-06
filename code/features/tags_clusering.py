@@ -93,7 +93,7 @@ def cluster_to_tags_mapping(tag_to_cluster_map):
     
     return clusters_to_tags
 
-def save_cluster_to_tags_mapping(clusters_to_tags, filename):
+def save_as_pickle(object_to_save, filename):
     with open(filename, 'w') as handle:
         pickle.dump(clusters_to_tags, handle)
 
@@ -110,4 +110,4 @@ if __name__ == '__main__':
 
     tag_to_cluster_map = create_tag_clusters(word_vectors)
     cluster_to_tag_map = cluster_to_tags_mapping(tag_to_cluster_map)
-    save_cluster_to_tags_mapping(cluster_to_tag_map, 'clusters.pickle')
+    save_as_pickle(cluster_to_tag_map, 'clusters.pickle')
