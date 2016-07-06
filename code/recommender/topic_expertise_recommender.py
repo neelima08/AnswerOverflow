@@ -43,7 +43,7 @@ def load_from_pickle(filename):
 
 def get_potential_answerers(topics_expertise):
     """
-    - Returns set of potential answerers for each topic. This function takes a percentage of users from each hour.
+    - Returns set of potential answerers for each topic. This function takes a percentage of users from each topic.
     """
     sampling = 0.5
 
