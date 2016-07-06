@@ -15,14 +15,14 @@ def get_tag_to_topic_mapping(topics_to_tags):
     """
     - Create a dict from tag to topic index
     """
-    tags_to_topics = {}
+    tags_topic_mapping = {}
     for topic_index in range(len(topics_to_tags)):
         for tag in topics_to_tags[topic_index]:
-            tags_to_topics[tag] = topic_index
+            tags_topic_mapping[tag] = topic_index
 
-    return tags_to_topics
+    return tags_topic_mapping
 
-def get_user_topic_expertise_mapping(tags_to_topics, user_tag_expertise):
+def get_user_topic_expertise_mapping(tags_topic_mapping, user_tag_expertise):
     """
     - Returns a dict of userId to dict of topic index to score
     """
@@ -32,10 +32,10 @@ def get_user_topic_expertise_mapping(tags_to_topics, user_tag_expertise):
         tags_expertise = user_tag_expertise[user]
         topic_expertise = {}
         for tag in tags_expertise.keys():
-            if tag not in tags_to_topics:
+            if tag not in tags_topic_mapping:
                 continue
         
-            topic = tags_to_topics[tag]
+            topic = tags_topic_mapping[tag]
             topic_expertise[topic] = topic_expertise.get(topic, 0) + tags_expertise[tag]
         
         user_topic_expertise[user] = topic_expertise
@@ -67,12 +67,18 @@ def save_topics_expertise(topics_expertise, filename):
     with open(filename, 'w') as handle:
         pickle.dump(topics_expertise, handle)
 
+def save_tags_topic_mapping(tags_topic_mapping, filename):
+    with open(filename, 'w') as handle:
+        pickle.dump(tags_topic_mapping, handle)
+
 if __name__ == '__main__':
-    topics_to_tags = get_topic_to_tags_mapping('clusters.pickle')
+    topics_to_tags = get_topic_to_tags_mapping('topics.pickle')
     user_tag_expertise = get_user_tag_expertise('user_tag_expertise.pickle')
 
-    tags_to_topics = get_tag_to_topic_mapping(topics_to_tags)
-    user_topic_expertise = get_user_topic_expertise_mapping(tags_to_topics, user_tag_expertise)
+    tags_topic_mapping = get_tag_to_topic_mapping(topics_to_tags)
+    user_topic_expertise = get_user_topic_expertise_mapping(tags_topic_mapping, user_tag_expertise)
 
     topics_expertise = get_topic_expert_users(user_topic_expertise)
+
     save_topics_expertise(topics_expertise, 'topics_expertise.pickle')
+    save_tags_topic_mapping(tags_topic_mapping, 'tags_topic.pickle')
