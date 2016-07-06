@@ -104,4 +104,4 @@ if __name__ == '__main__':
     topic_to_potential_answerers = get_potential_answerers(topics_expertise)
     recommender_accuracy = get_recommender_accuracy(questions_tags_dict, questions_answerers_dict, tags_topics_mapping, topic_to_potential_answerers)
 
-    print("Accuracy of topic expertise recommender is %" % recommender_accuracy)
+    print("Accuracy of topic expertise recommender is %s" % recommender_accuracy)
