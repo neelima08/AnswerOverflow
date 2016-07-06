@@ -3,13 +3,13 @@ import numpy as np
 import pickle
 import operator
 
-def get_topic_to_tags_mapping(filename):
+def load_from_pickle(filename):
     with open(filename, 'rb') as handle:
         return pickle.load(handle)
 
-def get_user_tag_expertise(filename):
-    with open(filename, 'rb') as handle:
-        return pickle.load(handle)
+def save_as_pickle(object_to_save, filename):
+    with open(filename, 'w') as handle:
+        pickle.dump(object_to_save, handle)
 
 def get_tag_to_topic_mapping(topics_to_tags):
     """
@@ -63,22 +63,15 @@ def get_topic_expert_users(user_topic_expertise):
         topic_expertise.sort(key=operator.itemgetter(1), reverse=True)
         topics_expertise[topic] = topic_expertise
 
-def save_topics_expertise(topics_expertise, filename):
-    with open(filename, 'w') as handle:
-        pickle.dump(topics_expertise, handle)
-
-def save_tags_topic_mapping(tags_topic_mapping, filename):
-    with open(filename, 'w') as handle:
-        pickle.dump(tags_topic_mapping, handle)
 
 if __name__ == '__main__':
-    topics_to_tags = get_topic_to_tags_mapping('topics.pickle')
-    user_tag_expertise = get_user_tag_expertise('user_tag_expertise.pickle')
+    topics_to_tags = load_from_pickle('topics.pickle')
+    user_tag_expertise = load_from_pickle('user_tag_expertise.pickle')
 
     tags_topic_mapping = get_tag_to_topic_mapping(topics_to_tags)
     user_topic_expertise = get_user_topic_expertise_mapping(tags_topic_mapping, user_tag_expertise)
 
     topics_expertise = get_topic_expert_users(user_topic_expertise)
 
-    save_topics_expertise(topics_expertise, 'topics_expertise.pickle')
-    save_tags_topic_mapping(tags_topic_mapping, 'tags_topic.pickle')
+    save_as_pickle(topics_expertise, 'topics_expertise.pickle')
+    save_as_pickle(tags_topic_mapping, 'tags_topic.pickle')
