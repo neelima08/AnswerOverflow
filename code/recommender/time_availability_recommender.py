@@ -84,4 +84,4 @@ if __name__ == '__main__':
 
     recommender_accuracy = get_recommender_accuracy(questions_hour_2016_dict, questions_answerers_dict, hour_to_potential_answerers)
 
-    print("Time availability recommender is %" % recommender_accuracy)
+    print("Time availability recommender is %s" % recommender_accuracy)
