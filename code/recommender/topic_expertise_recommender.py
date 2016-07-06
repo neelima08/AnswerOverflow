@@ -30,7 +30,7 @@ def get_question_tags_mapping(questions):
     posts = pd.read_csv('posts.csv', delimiter='|', usecols= ['Id', 'PostTypeId', 'Tags'])
 
     questions = posts.loc[posts['PostTypeId'] == 1]
-    questions['Tags'] = questions['Tags'].apply(func_format)
+    questions['Tags'] = questions['Tags'].apply(xml2List)
 
     questions_tags = questions.drop(['PostTypeId'], axis=1)
     return questions_tags.set_index('Id').to_dict()
