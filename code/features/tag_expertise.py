@@ -41,7 +41,7 @@ def get_user_tags_score_mapping(s3_url):
     return answers_score.join(question_tag_association, answers_score.ParentId == question_tag_association.Id, 'left_outer')\
                               .drop(question_tag_association.Id)
 
-def save_get_user_tags_score_mapping(user_tag_score, filename):
+def save_user_tags_score_mapping(user_tag_score, filename):
     user_tag_score.select('OwnerUserId', 'ParentId', 'Score', 'Tags').write \
                 .format('com.databricks.spark.csv') \
                 .option('delimiter', '|')\
