@@ -64,7 +64,7 @@ def get_user_expertise(user_tag_score):
 
         for tag in tags:
             tag_expertise = user_tag_expertise.get(user, {})
-            tag_expertise[tag] = tag_expertise.get(tag, 0) + sigmoid(score)
+            tag_expertise[tag] = tag_expertise.get(tag, 0) + sigmoid(score, 0.2, 20)
             user_tag_expertise[user] = tag_expertise
     
     return user_tag_expertise
