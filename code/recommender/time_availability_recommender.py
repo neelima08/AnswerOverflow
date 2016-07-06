@@ -29,10 +29,7 @@ def get_questions_hour_mapping():
     questions_hour_2016 = questions_2016.drop(['CreationDate', 'PostTypeId'], axis=1)
     return questions_hour_2016.set_index('Id').to_dict()
 
-def get_user_availability_dict(filename):
-    """
-    - Returns user avaiability feature, i.e. mapping from hours to list of users. This list is sorted by avaiability score.
-    """
+def load_from_pickle(filename):
     with open(filename, 'r') as handle:
         return pickle.load(handle)
 
@@ -81,8 +78,10 @@ if __name__ == '__main__':
     questions_answerers_dict = get_questions_answerers_mapping()
     questions_hour_2016_dict = get_questions_hour_mapping()
 
-    hour_to_users = get_user_availability_dict('hour_to_users.pickle')
+    # Load user avaiability feature, i.e. mapping from hours to list of users. This list is sorted by avaiability score.
+    hour_to_users = load_from_pickle('hour_to_users.pickle')
     hour_to_potential_answerers = get_potential_answerers(hour_to_users)
 
     recommender_accuracy = get_recommender_accuracy(questions_hour_2016_dict, questions_answerers_dict, hour_to_potential_answerers)
-    print("Accuracy of time availability recommender is %" % recommender_accuracy)
+
+    print("Time availability recommender is %" % recommender_accuracy)
