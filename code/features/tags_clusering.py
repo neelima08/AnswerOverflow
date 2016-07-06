@@ -59,7 +59,7 @@ def save_w2v_model(word2vec_model, filename):
     """
     - Saves word2vec model
     """
-    word2vec_model.save('/tmp/word2vec_model.bin')
+    word2vec_model.save('word2vec_model.bin')
 
 def create_tag_clusters(word2vec_model):
     """
