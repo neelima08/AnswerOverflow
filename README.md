@@ -9,7 +9,7 @@ This data was split in 70/30 training and test data, where 70% of the data was u
 
 #Features
 Following features were calculated to build recommender model:
-* **User Topical Expertise** - Tags were clustered into 97 topics using Word2Vec and KMeans. Visualizations of this clustering can be seen in code/visualizations folder where 300 feature dimensions were reduced to 2D using t-sne. User's topical expertise was calculated based on scores received on their answers for questions associated with particular tags.
+* **User Topical Expertise** - Tags were clustered into 97 topics using Word2Vec and KMeans. Visualizations of this clustering can be seen in visualizations folder where 300 feature dimensions were reduced to 2D using t-sne. User's topical expertise was calculated based on scores received on their answers for questions associated with particular tags. Special care was taken to ensure those users aren't classified as "experts" who answered few questions and received high score on them. This was addressed by calculating sigmoid of user's score.
 * **User Time Availability** - User's availability is defined as user's activity in terms of comments and answers. This was calculated on an hour basis.
 
 Code to calculate features is present in code/features directory.
